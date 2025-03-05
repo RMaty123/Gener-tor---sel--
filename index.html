@@ -48,6 +48,18 @@
     #result {
         margin-top: 20px;
     }
+    .error {
+        color: #dc3545;
+        margin-top: 10px;
+        font-size: 14px;
+    }
+    .history {
+        margin-top: 20px;
+        text-align: left;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
 </style>
 </head>
 <body>
@@ -69,83 +81,132 @@
     <button onclick="drawNumbers()">Losovat čísla</button>
     <button onclick="reset()">Vynulovat / uložit</button>
     <div id="result"></div>
+    <div id="history" class="history"></div>
 </div>
 
 <script>
-var min, max, withReplacement, customNumbers, grouping;
-var vybranaCisla = [];
-var pocetKombinaci = 0;
+let drawnNumbers = [];
+let groups = [];
+let combinationCount = 0;
+
+function validateInputs() {
+    const min = parseInt(document.getElementById("min").value);
+    const max = parseInt(document.getElementById("max").value);
+    const count = parseInt(document.getElementById("count").value);
+    
+    if (isNaN(min) || isNaN(max) || isNaN(count)) {
+        throw new Error("Všechna číselná pole musí být vyplněna.");
+    }
+    
+    if (min >= max) {
+        throw new Error("Minimální číslo musí být menší než maximální číslo.");
+    }
+    
+    if (count < 1) {
+        throw new Error("Počet čísel k vylosování musí být alespoň 1.");
+    }
+    
+    return { min, max, count };
+}
+
+function parseCustomNumbers() {
+    const customNumbersInput = document.getElementById("custom-numbers").value.trim();
+    if (!customNumbersInput) return null;
+    
+    const numbers = customNumbersInput.split(",")
+        .map(n => parseInt(n.trim()))
+        .filter(n => !isNaN(n));
+    
+    if (numbers.length === 0) return null;
+    return [...new Set(numbers)]; // Remove duplicates
+}
+
+function getAllDrawnNumbers() {
+    if (groups.length === 0) return drawnNumbers;
+    return groups.reduce((acc, group) => acc.concat(group), []);
+}
+
+function getAvailableNumbers(min, max, customNumbers, withReplacement) {
+    if (customNumbers) {
+        return customNumbers;
+    }
+    
+    const allDrawnNumbers = getAllDrawnNumbers();
+    const available = [];
+    for (let i = min; i <= max; i++) {
+        if (withReplacement || !allDrawnNumbers.includes(i)) {
+            available.push(i);
+        }
+    }
+    return available;
+}
 
 function drawNumbers() {
-    min = parseInt(document.getElementById("min").value);
-    max = parseInt(document.getElementById("max").value);
-    withReplacement = document.getElementById("with-replacement").checked;
-    grouping = document.getElementById("grouping").checked;
-    customNumbers = document.getElementById("custom-numbers").value.split(",").map(function(item) {
-        return parseInt(item.trim());
-    });
-    var count = parseInt(document.getElementById("count").value);
-
-    if (min >= max) {
-        alert("Minimální číslo musí být menší než maximální číslo.");
-        return;
-    }
-
-    if (!withReplacement && !grouping && vybranaCisla.length === (max - min + 1)) {
-        alert("Všechna čísla v rozsahu byla již vylosována.");
-        return;
-    }
-
-    var availableNumbers;
-    if (customNumbers.length > 0) {
-        availableNumbers = [];
-        for (var i = min; i <= max; i++) {
-            if (!customNumbers.includes(i)) {
-                availableNumbers.push(i);
+    try {
+        const { min, max, count } = validateInputs();
+        const withReplacement = document.getElementById("with-replacement").checked;
+        const grouping = document.getElementById("grouping").checked;
+        const customNumbers = parseCustomNumbers();
+        
+        let availableNumbers = getAvailableNumbers(min, max, customNumbers, withReplacement);
+        
+        if (!withReplacement && availableNumbers.length < count) {
+            throw new Error("Není dostatek dostupných čísel pro losování.");
+        }
+        
+        const drawn = [];
+        const tempAvailable = [...availableNumbers];
+        
+        for (let i = 0; i < count; i++) {
+            if (tempAvailable.length === 0) break;
+            
+            const randomIndex = Math.floor(Math.random() * tempAvailable.length);
+            const number = tempAvailable[randomIndex];
+            
+            drawn.push(number);
+            if (!withReplacement) {
+                tempAvailable.splice(randomIndex, 1);
+                if (!grouping) {
+                    drawnNumbers.push(number);
+                }
             }
         }
-    } else {
-        availableNumbers = [];
-        for (var i = min; i <= max; i++) {
-            if (!vybranaCisla.includes(i)) {
-                availableNumbers.push(i);
-            }
+        
+        if (grouping) {
+            groups.push(drawn);
         }
-    }
-
-    if (availableNumbers.length < count) {
-        alert("Není dostatečně dostupných čísel v zadaném rozsahu.");
-        return;
-    }
-
-    var drawnNumbers = [];
-    for (var j = 0; j < count; j++) {
-        var index = Math.floor(Math.random() * availableNumbers.length);
-        var drawnNumber = availableNumbers[index];
-        drawnNumbers.push(drawnNumber);
-        if (!withReplacement) {
-            availableNumbers.splice(index, 1);
+        
+        // Update display
+        const resultDiv = document.getElementById("result");
+        const historyDiv = document.getElementById("history");
+        
+        resultDiv.innerHTML = `<h3>Vylosovaná čísla: ${drawn.join(", ")}</h3>`;
+        
+        if (grouping) {
+            historyDiv.innerHTML = "<h4>Historie skupin:</h4>" + 
+                groups.map((group, index) => `Skupina ${index + 1}: ${group.join(", ")}`).join("<br>");
+        } else {
+            historyDiv.innerHTML = "<h4>Vylosovaná čísla:</h4>" + drawnNumbers.join(", ");
         }
-    }
-
-    if (grouping) {
-        vybranaCisla.push(drawnNumbers);
-    } else {
-        vybranaCisla = vybranaCisla.concat(drawnNumbers);
-    }
-
-    document.getElementById("result").innerHTML = "<h3>Vylosovaná čísla: " + (grouping ? drawnNumbers.join(", ") : drawnNumbers) + "</h3>";
-
-    if (!withReplacement && vybranaCisla.length === (max - min + 1)) {
-        pocetKombinaci++;
-        alert("Všechna možná čísla v rozsahu byla vylosována. Počet kombinací: " + pocetKombinaci);
+        
+        // Check if all numbers have been drawn
+        const allDrawnNumbers = getAllDrawnNumbers();
+        if (!withReplacement && allDrawnNumbers.length === (max - min + 1)) {
+            combinationCount++;
+            alert(`Všechna možná čísla v rozsahu byla vylosována. Počet kombinací: ${combinationCount}`);
+        }
+        
+    } catch (error) {
+        document.getElementById("result").innerHTML = `<div class="error">${error.message}</div>`;
     }
 }
 
 function reset() {
-    vybranaCisla = [];
-    pocetKombinaci = 0;
+    drawnNumbers = [];
+    groups = [];
+    combinationCount = 0;
     document.getElementById("result").innerHTML = "";
+    document.getElementById("history").innerHTML = "";
 }
 </script>
 
