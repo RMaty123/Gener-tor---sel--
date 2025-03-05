@@ -74,6 +74,7 @@
 <script>
 var min, max, withReplacement, customNumbers, grouping;
 var vybranaCisla = [];
+var pocetKombinaci = 0;
 
 function drawNumbers() {
     min = parseInt(document.getElementById("min").value);
@@ -134,10 +135,16 @@ function drawNumbers() {
     }
 
     document.getElementById("result").innerHTML = "<h3>Vylosovaná čísla: " + (grouping ? drawnNumbers.join(", ") : drawnNumbers) + "</h3>";
+
+    if (!withReplacement && vybranaCisla.length === (max - min + 1)) {
+        pocetKombinaci++;
+        alert("Všechna možná čísla v rozsahu byla vylosována. Počet kombinací: " + pocetKombinaci);
+    }
 }
 
 function reset() {
     vybranaCisla = [];
+    pocetKombinaci = 0;
     document.getElementById("result").innerHTML = "";
 }
 </script>
