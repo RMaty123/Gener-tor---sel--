@@ -60,19 +60,24 @@
     <input type="number" id="max" min="1" value="10"><br><br>
     <label for="with-replacement">S opakováním čísel:</label>
     <input type="checkbox" id="with-replacement" checked><br><br>
+    <label for="custom-numbers">Vlastní sada čísel:</label>
+    <input type="text" id="custom-numbers" placeholder="Zadejte čísla oddělená čárkami"><br><br>
     <button onclick="drawNumber()">Losovat číslo</button>
-    <button onclick="reset()">Vynulovat</button>
+    <button onclick="reset()">Vynulovat / uložit</button>
     <div id="result"></div>
 </div>
 
 <script>
-var min, max, withReplacement;
+var min, max, withReplacement, customNumbers;
 var vybranaCisla = [];
 
 function drawNumber() {
     min = parseInt(document.getElementById("min").value);
     max = parseInt(document.getElementById("max").value);
     withReplacement = document.getElementById("with-replacement").checked;
+    customNumbers = document.getElementById("custom-numbers").value.split(",").map(function(item) {
+        return parseInt(item.trim());
+    });
 
     if (min >= max) {
         alert("Minimální číslo musí být menší než maximální číslo.");
@@ -84,20 +89,32 @@ function drawNumber() {
         return;
     }
 
-    var drawnNumber;
-    if (withReplacement) {
-        drawnNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+    var availableNumbers;
+    if (customNumbers.length > 0) {
+        availableNumbers = [];
+        for (var i = min; i <= max; i++) {
+            if (!customNumbers.includes(i)) {
+                availableNumbers.push(i);
+            }
+        }
     } else {
-        var availableNumbers = [];
+        availableNumbers = [];
         for (var i = min; i <= max; i++) {
             if (!vybranaCisla.includes(i)) {
                 availableNumbers.push(i);
             }
         }
-        if (availableNumbers.length === 0) {
-            alert("Všechna čísla v rozsahu byla již vylosována.");
-            return;
-        }
+    }
+
+    if (availableNumbers.length === 0) {
+        alert("Všechna čísla v zadaném rozsahu byla již vylosována.");
+        return;
+    }
+
+    var drawnNumber;
+    if (withReplacement) {
+        drawnNumber = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
+    } else {
         drawnNumber = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
     }
 
