@@ -62,6 +62,8 @@
     <input type="checkbox" id="with-replacement" checked><br><br>
     <label for="count">Počet čísel k vylosování:</label>
     <input type="number" id="count" min="1" value="1"><br><br>
+    <label for="grouping">Ukládat jako skupiny:</label>
+    <input type="checkbox" id="grouping"><br><br>
     <label for="custom-numbers">Vlastní sada čísel:</label>
     <input type="text" id="custom-numbers" placeholder="Zadejte čísla oddělená čárkami"><br><br>
     <button onclick="drawNumbers()">Losovat čísla</button>
@@ -70,13 +72,14 @@
 </div>
 
 <script>
-var min, max, withReplacement, customNumbers;
+var min, max, withReplacement, customNumbers, grouping;
 var vybranaCisla = [];
 
 function drawNumbers() {
     min = parseInt(document.getElementById("min").value);
     max = parseInt(document.getElementById("max").value);
     withReplacement = document.getElementById("with-replacement").checked;
+    grouping = document.getElementById("grouping").checked;
     customNumbers = document.getElementById("custom-numbers").value.split(",").map(function(item) {
         return parseInt(item.trim());
     });
@@ -87,7 +90,7 @@ function drawNumbers() {
         return;
     }
 
-    if (!withReplacement && vybranaCisla.length === (max - min + 1)) {
+    if (!withReplacement && !grouping && vybranaCisla.length === (max - min + 1)) {
         alert("Všechna čísla v rozsahu byla již vylosována.");
         return;
     }
@@ -124,9 +127,13 @@ function drawNumbers() {
         }
     }
 
-    vybranaCisla = vybranaCisla.concat(drawnNumbers);
+    if (grouping) {
+        vybranaCisla.push(drawnNumbers);
+    } else {
+        vybranaCisla = vybranaCisla.concat(drawnNumbers);
+    }
 
-    document.getElementById("result").innerHTML = "<h3>Vylosovaná čísla: " + drawnNumbers.join(", ") + "</h3>";
+    document.getElementById("result").innerHTML = "<h3>Vylosovaná čísla: " + (grouping ? drawnNumbers.join(", ") : drawnNumbers) + "</h3>";
 }
 
 function reset() {
